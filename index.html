@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Writer Progress Dashboard ✨📚</title>
+  <style>
+    /* ===== Body & Container ===== */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #a3d5ff, #ffd1dc);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    /* ===== Input Card ===== */
+    .input-card {
+      background-color: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .input-card input, .input-card textarea, .input-card select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+    }
+    .input-card button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #ffdd57;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .input-card button:hover {
+      background-color: #ffc700;
+    }
+
+    /* ===== Project Cards ===== */
+    .cards-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .card {
+      background-color: rgba(255,255,255,0.9);
+      width: 250px;
+      padding: 15px;
+      border-radius: 15px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .card h3 {
+      margin-top: 0;
+      font-size: 1.2em;
+      display: flex;
+      justify-content: space-between;
+    }
+    .card p {
+      font-size: 0.95em;
+      line-height: 1.4;
+    }
+    .card button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: bold;
+      background-color: #a3d5ff;
+      transition: background 0.2s;
+    }
+    .card button:hover {
+      background-color: #7abfff;
+    }
+
+    /* ===== Export Button ===== */
+    .export-btn {
+      display: block;
+      margin: 30px auto;
+      padding: 12px 24px;
+      border-radius: 12px;
+      background-color: #ffb6b9;
+      color: #333;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .export-btn:hover {
+      background-color: #ff8fa3;
+    }
+
+    /* ===== Pomodoro Timer ===== */
+    .timer {
+      font-size: 1em;
+      margin-top: 5px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✨ Writer Progress Dashboard ✨</h1>
+    <div class="input-card">
+      <input type="text" id="title" placeholder="Project Title *" required>
+      <input type="text" id="platform" placeholder="Platform (Medium, KDP...)">
+      <input type="number" id="wordCount" placeholder="Word Count">
+      <input type="number" id="timeSpent" placeholder="Time Spent (minutes)">
+      <select id="status">
+        <option value="WIP">WIP</option>
+        <option value="Done">Done</option>
+      </select>
+      <textarea id="notes" placeholder="Notes / Future Ideas"></textarea>
+      <button id="addBtn">➕ Add Project</button>
+    </div>
+
+    <div class="cards-container" id="cardsContainer">
+      <!-- Project cards go here -->
+    </div>
+
+    <button class="export-btn" id="exportBtn">💾 Export CSV</button>
+  </div>
+
+  <script>
+    // ===== Load existing projects =====
+    let projects = JSON.parse(localStorage.getItem('projects')) || [];
+
+    const container = document.getElementById('cardsContainer');
+    const addBtn = document.getElementById('addBtn');
+
+    function renderCards() {
+      container.innerHTML = '';
+      projects.forEach((proj, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3>${proj.title} ${proj.status === 'Done' ? '✅' : '📝'}</h3>
+          <p><strong>Platform:</strong> ${proj.platform || '-'}</p>
+          <p><strong>Words:</strong> ${proj.wordCount || '-'}</p>
+          <p><strong>Time:</strong> ${proj.timeSpent || '-'} min</p>
+          <p><strong>Notes:</strong> ${proj.notes || '-'}</p>
+          <button onclick="toggleStatus(${idx})">${proj.status==='Done'?'Mark WIP':'Mark Done'}</button>
+          <button onclick="deleteProject(${idx})">🗑 Delete</button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function saveProjects() {
+      localStorage.setItem('projects', JSON.stringify(projects));
+    }
+
+    addBtn.addEventListener('click', () => {
+      const title = document.getElementById('title').value.trim();
+      if(!title) return alert('Title is required!');
+      const platform = document.getElementById('platform').value.trim();
+      const wordCount = document.getElementById('wordCount').value;
+      const timeSpent = document.getElementById('timeSpent').value;
+      const status = document.getElementById('status').value;
+      const notes = document.getElementById('notes').value.trim();
+
+      projects.push({title, platform, wordCount, timeSpent, status, notes});
+      saveProjects();
+      renderCards();
+      document.getElementById('title').value = '';
+      document.getElementById('platform').value = '';
+      document.getElementById('wordCount').value = '';
+      document.getElementById('timeSpent').value = '';
+      document.getElementById('status').value = 'WIP';
+      document.getElementById('notes').value = '';
+    });
+
+    function toggleStatus(idx) {
+      projects[idx].status = projects[idx].status === 'Done' ? 'WIP' : 'Done';
+      saveProjects();
+      renderCards();
+    }
+
+    function deleteProject(idx) {
+      if(confirm('Delete this project?')) {
+        projects.splice(idx,1);
+        saveProjects();
+        renderCards();
+      }
+    }
+
+    // ===== CSV Export =====
+    const exportBtn = document.getElementById('exportBtn');
+    exportBtn.addEventListener('click', () => {
+      if(!projects.length) return alert('No projects to export!');
+      let csv = 'Title,Platform,WordCount,TimeSpent,Status,Notes\n';
+      projects.forEach(p => {
+        csv += `"${p.title}","${p.platform}","${p.wordCount}","${p.timeSpent}","${p.status}","${p.notes}"\n`;
+      });
+      const blob = new Blob([csv], {type: 'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'writer_projects.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    renderCards();
+  </script>
+</body>
+</html>
