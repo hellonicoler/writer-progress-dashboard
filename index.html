@@ -120,11 +120,45 @@
       margin-top: 5px;
       text-align: center;
     }
+
+/* ===== Spotlight ===== */
+.spotlight {
+  background-color: #fff8f0;
+  border: 2px dashed #ff8fa3;
+  border-radius: 20px;
+  padding: 30px;
+  margin: 20px auto;
+  text-align: center;
+  min-height: 120px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: background 0.3s;
+}
+.spotlight.active {
+  border-style: solid;
+  background: #fff0f5;
+}
+
+/* Draggable */
+.card {
+  cursor: grab;
+}
+.card.dragging {
+  opacity: 0.5;
+}
+
+
+    
   </style>
 </head>
 <body>
   <div class="container">
     <h1>✨ Writer Progress Dashboard ✨</h1>
+    
+    <!-- Spotlight Area -->
+<div id="spotlight" class="spotlight">
+  <p>🌟 Drag a project card here to focus 🌟</p>
+</div>
+    
     <div class="input-card">
       <input type="text" id="title" placeholder="Project Title *" required>
       <input type="text" id="platform" placeholder="Platform (Medium, KDP...)">
@@ -166,6 +200,7 @@
           <button onclick="toggleStatus(${idx})">${proj.status==='Done'?'Mark WIP':'Mark Done'}</button>
           <button onclick="deleteProject(${idx})">🗑 Delete</button>
         `;
+        makeDraggable(card, idx);
         container.appendChild(card);
       });
     }
@@ -226,6 +261,84 @@
     });
 
     renderCards();
+
+
+
+
+
+
+let activeIdx = null;
+let timers = {}; // store elapsed seconds per project
+let timerInterval = null;
+
+function renderSpotlight() {
+  const spotlight = document.getElementById('spotlight');
+  spotlight.innerHTML = '';
+
+  if (activeIdx === null) {
+    spotlight.innerHTML = '<p>🌟 Drag a project card here to focus 🌟</p>';
+    spotlight.classList.remove('active');
+    return;
+  }
+
+  const proj = projects[activeIdx];
+  spotlight.classList.add('active');
+
+  const time = timers[activeIdx] || 0;
+  const mins = Math.floor(time / 60);
+  const secs = time % 60;
+
+  spotlight.innerHTML = `
+    <h2>⭐ ${proj.title}</h2>
+    <p><strong>Elapsed:</strong> ${mins}m ${secs}s</p>
+    <button onclick="clearSpotlight()">Stop & Remove</button>
+  `;
+}
+
+function clearSpotlight() {
+  activeIdx = null;
+  stopTimer();
+  renderSpotlight();
+}
+
+function startTimer(idx) {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    timers[idx] = (timers[idx] || 0) + 1;
+    renderSpotlight();
+  }, 1000);
+}
+function stopTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+// ===== Drag & Drop =====
+function makeDraggable(card, idx) {
+  card.draggable = true;
+
+  card.addEventListener('dragstart', e => {
+    card.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', idx);
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+  });
+}
+
+const spotlight = document.getElementById('spotlight');
+spotlight.addEventListener('dragover', e => e.preventDefault());
+spotlight.addEventListener('drop', e => {
+  e.preventDefault();
+  const idx = e.dataTransfer.getData('text/plain');
+  activeIdx = parseInt(idx);
+  startTimer(activeIdx);
+  renderSpotlight();
+});
+
+
+
+    
   </script>
 </body>
 </html>
